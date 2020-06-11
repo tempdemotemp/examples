@@ -1,0 +1,16 @@
+apiVersion : apps/v1beta1
+kind: Deployment
+metadata:
+  name: "rvek8"
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: "rvek8"
+    spec:
+      containers:
+        - name: "rvek8"
+          image: "rvearc1.azurecr.io/rvek8"
+          ports:
+          - containerPort: 3000
