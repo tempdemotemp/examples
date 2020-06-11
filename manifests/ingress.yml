@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: "rvek8"
+    labels:
+        app: "rvek8"
+    annotations:
+        kubernetes.io/ingress.class: addon-http-application-routing
+spec:
+    rules:
+        - host: rvek8ebdb-rvek8.68abdac4f4eb4acc8374.westeurope.aksapp.io
+          http:
+            paths:
+            - path: /
+              backend:
+                serviceName: "rvek8"
+                servicePort: 3000
