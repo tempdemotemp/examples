@@ -1,0 +1,64 @@
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    
+    - uses: actions/checkout@master
+    
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Create ACR
+      id: create-acr
+      run: |
+        az acr create -n kube1fv -g kube1fvbbb7-rg --location "West Europe" --sku Basic --admin-enabled
+        echo "::set-output name=acr_username::`az acr credential show -n kube1fv --query username | xargs`"
+        echo "::set-output name=acr_password::`az acr credential show -n kube1fv --query passwords[0].value | xargs`"
+        echo "::add-mask::`az acr credential show -n kube1fv --query passwords[0].value | xargs`"
+
+    - uses: azure/docker-login@v1
+      with:
+        login-server: kube1fv.azurecr.io
+        username: ${{ steps.create-acr.outputs.acr_username }}
+        password: ${{ steps.create-acr.outputs.acr_password }}
+
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        docker build "$GITHUB_WORKSPACE/cassandra/image" -f  "cassandra/image/Dockerfile" -t kube1fv.azurecr.io/kube1:${{ github.sha }} --label dockerfile-path=cassandra/image/Dockerfile
+        docker push kube1fv.azurecr.io/kube1:${{ github.sha }}
+    
+    - uses: azure/k8s-set-context@v1
+      id: login
+      with:
+         kubeconfig: ${{ secrets.aks_kube1_kubeConfig }}
+    
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep kube186af | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace kube186af`
+        fi
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: kube186af
+        container-registry-url: kube1fv.azurecr.io
+        container-registry-username: ${{ steps.create-acr.outputs.acr_username }}
+        container-registry-password: ${{ steps.create-acr.outputs.acr_password }}
+        secret-name: kube1dockerauth
+       
+    - uses: azure/k8s-deploy@v1.2
+      with:
+        namespace: kube186af
+        manifests: |
+          manifests/deployment.yml
+          manifests/service.yml
+          manifests/ingress.yml
+        images: |
+          kube1fv.azurecr.io/kube1:${{ github.sha }}
+        imagepullsecrets: |
+          kube1dockerauth   
