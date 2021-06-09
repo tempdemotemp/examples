@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: "kube1-bebc"
+    labels:
+        app: "kube1-bebc"
+    annotations:
+        kubernetes.io/ingress.class: addon-http-application-routing
+spec:
+    rules:
+        - host: kube186af-kube1-bebc.7fd4c15cb0994f8882ed.westeurope.aksapp.io
+          http:
+            paths:
+            - path: /
+              backend:
+                serviceName: "kube1-bebc"
+                servicePort: 7000
