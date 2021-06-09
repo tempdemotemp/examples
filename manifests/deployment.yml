@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: "kube1-bebc"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "kube1-bebc"
+  template:
+    metadata:
+      labels:
+        app: "kube1-bebc"
+    spec:
+      containers:
+        - name: "kube1-bebc"
+          image: "kube1fv.azurecr.io/kube1"
+          ports:
+          - containerPort: 7000
